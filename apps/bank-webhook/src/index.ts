@@ -7,6 +7,7 @@ app.use(express.json())
 app.post("/hdfcWebhook", async (req, res) => {
     //TODO: Add zod validation here?
     //TODO: HDFC bank should ideally send us a secret so we know this is sent by them
+    // TODO : check if this transaction is processing or not  (balance should increase only when it is processing)
     const paymentInformation: {
         token: string;
         userId: string;
@@ -17,7 +18,19 @@ app.post("/hdfcWebhook", async (req, res) => {
         amount: req.body.amount
     };
 
-    try {
+    try{
+        const transaction = await db.onRampTransaction.findUnique({
+            where : {
+                token : paymentInformation .token
+            }
+        });
+        if(!transaction || transaction.status !== "Processing"){
+            return res.status(400).json({
+                message: "Transaction is not in a processing state or does not exist.",
+              });
+        }
+
+  
         await db.$transaction([
             db.balance.updateMany({
                 where: {
