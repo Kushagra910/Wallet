@@ -1,7 +1,8 @@
 import GoogleProvider from "next-auth/providers/google";
 import db from "@repo/db/client";
+import type { AuthOptions } from "next-auth";
 
-export const authOptions = {
+export const authOptions:AuthOptions = {
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -9,20 +10,12 @@ export const authOptions = {
         })
     ],
     callbacks: {
-      async signIn({ user, account }: {
-        user: {
-          email: string;
-          name: string
-        },
-        account: {
-          provider: "google" | "github"
-        }
-      }) {
+      async signIn({ user, account }) {
         console.log("hi signin")
-        if (!user || !user.email) {
+        if (!user.email || !account) {
           return false;
         }
-
+        const name = user.name || "Unknown";
         await db.merchant.upsert({
           select: {
             id: true
